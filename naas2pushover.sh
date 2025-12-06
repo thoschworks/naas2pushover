@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# --- Configuration ---
+# Credentials are read from environment variables for security.
+# Set them in your shell before running the script:
+# export PUSHOVER_API_TOKEN="your_api_token_here"
+# export PUSHOVER_USER_KEY="your_user_key_here"
+PUSHOVER_API_TOKEN=${NAAS2PUSHOVER_PUSHOVER_API_TOKEN}
+PUSHOVER_USER_KEY=${NAAS2PUSHOVER_PUSHOVER_USER_KEY}
+PUSHOVER_PRIORITY="-1"
+
+# --- Check Credentials and Handle Debug/Exit ---
+# This single block checks for credentials, prints a debug message if needed,
+# and exits the script if credentials are missing.
+if [ -z "$PUSHOVER_API_TOKEN" ] || [ -z "$PUSHOVER_USER_KEY" ]; then
+  if [ "${DEBUG}" == "1" ]; then
+    echo "DEBUG: Pushover credentials not set. Exiting."
+  fi
+  exit 1
+fi
+
+# 1. Fetch random rejection with 3 retries
+NAAS_RESPONSE=$(curl -s --retry 3 --retry-delay 1 "https://naas.isalman.dev/no")
+
+# --- Debug Output for NaaS API Call ---
+if [ "${DEBUG}" == "1" ]; then
+  echo "DEBUG: NaaS API Response: ${NAAS_RESPONSE}"
+fi
+
+# 2. Extract rejection reason with sed
+REASON=$(echo "$NAAS_RESPONSE" | sed 's/.*"reason":"\([^"]*\)".*/\1/')
+
+# 3. Only send if a reason was successfully extracted
+if [ -n "$REASON" ] && [ "$REASON" != "$NAAS_RESPONSE" ]; then
+  # 4. Send notification to Pushover with 3 retries
+  # Capture response for debugging
+  PUSHOVER_RESPONSE=$(curl -s --retry 3 --retry-delay 1 \
+    --form-string "token=${PUSHOVER_API_TOKEN}" \
+    --form-string "user=${PUSHOVER_USER_KEY}" \
+    --form-string "priority=${PUSHOVER_PRIORITY}" \
+    --form-string "title=NaaS Rejection Reason" \
+    --form-string "message=${REASON}" \
+    https://api.pushover.net/1/messages.json)
+
+  # --- Debug Output for Pushover.net Call ---
+  if [ "${DEBUG}" == "1" ]; then
+    echo "DEBUG: Pushover API Response: ${PUSHOVER_RESPONSE}"
+  fi
+fi
+
+exit 0
