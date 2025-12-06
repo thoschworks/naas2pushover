@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # --- Configuration ---
 # Credentials are read from environment variables for security.
@@ -13,7 +13,7 @@ PUSHOVER_SOUND="vibrate"  # Make it silent but vibrating
 # This single block checks for credentials, prints a debug message if needed,
 # and exits the script if credentials are missing.
 if [ -z "$PUSHOVER_API_TOKEN" ] || [ -z "$PUSHOVER_USER_KEY" ]; then
-  if [ "${DEBUG}" == "1" ]; then
+  if [ "${DEBUG}" = "1" ]; then
     echo "DEBUG: Pushover credentials not set. Exiting."
   fi
   exit 1
@@ -23,7 +23,7 @@ fi
 NAAS_RESPONSE=$(curl -s --retry 3 --retry-delay 1 "https://naas.isalman.dev/no")
 
 # --- Debug Output for NaaS API Call ---
-if [ "${DEBUG}" == "1" ]; then
+if [ "${DEBUG}" = "1" ]; then
   echo "DEBUG: NaaS API Response: ${NAAS_RESPONSE}"
 fi
 
@@ -43,7 +43,7 @@ if [ -n "$REASON" ] && [ "$REASON" != "$NAAS_RESPONSE" ]; then
     https://api.pushover.net/1/messages.json)
 
   # --- Debug Output for Pushover.net Call ---
-  if [ "${DEBUG}" == "1" ]; then
+  if [ "${DEBUG}" = "1" ]; then
     echo "DEBUG: Pushover API Response: ${PUSHOVER_RESPONSE}"
   fi
 fi
